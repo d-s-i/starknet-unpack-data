@@ -1,102 +1,14 @@
 import BN from "bn.js";
 import { BigNumber, BigNumberish } from "ethers";
-import { parseEther } from "ethers/lib/utils";
-import { CombatConstants } from "../constants/CombatConstants";
-import { ResourcesConstants } from "../constants/ResourcesConstants";
-import { CostPacked, ResourceId, ResourceName, Troop, TroopExtended, TroopId, TroopName } from "../types";
-import { StringMap } from "../types";
+import { CombatConstants } from "./constants/CombatConstants";
+import { CostPacked, ResourceId, ResourceIdsMap, Squad, Troop, TroopId, TroopName } from "../types";
 
 export class Unpacker {
     
     static SHIFT = BigNumber.from(0x100);
     static PRIME = BigNumber.from(BigInt(2**251)).add(BigNumber.from(17).mul(BigInt(2**192)).add(1));
     
-    constructor() {}
-
-
-    /**
-     * 
-     * @param costs - A cost coming from a Realm contract (see: https://github.com/BibliothecaForAdventurers/realms-contracts/blob/main/contracts/settling_game/utils/game_structs.cairo)
-     * @param quantityMultiplier - Amount by which you want to multiply the value (by default 10 ** 18 to match the 18 decimals of the token)
-     * @param options - Specify how you want your data, add { resourcesAsNames: true } to have the object properties as names instead of tokenIds
-     * @returns an object matching the packed cost you first provided
-     */
-    transformCostToToken(costs: CostPacked[], quantityMultiplier: BigNumberish = parseEther("1"), options?: { resourcesAsNames?: boolean }) {
-        const { ids, values } = this._loadResourcesIdsAndValuesFromCost([], [], costs.length, costs, 0);
-
-        return options?.resourcesAsNames ? 
-            this._populateCostWithResourceName(ids, values, quantityMultiplier) : 
-            this._populateCostWithResourceIds(ids, values, quantityMultiplier);
-    }
-
-    unpackSquad(packedSquad: BigNumber | BN) {
-        // parameters taken from https://github.com/BibliothecaForAdventurers/realms-contracts/blob/main/contracts/settling_game/library/library_combat.cairo
-        const packedSquadSplit = this._splitInt( 
-            this._toBigNumber(packedSquad), 
-            15, 
-            Unpacker.SHIFT.pow(2), 
-            BigNumber.from(2).pow(16), 
-            []
-        );
-        let tier1Troops: (Troop | TroopExtended)[] = [];
-        let tier2Troops: (Troop | TroopExtended)[] = [];
-        let tier3Troops: (Troop | TroopExtended)[] = [];
-        let squad: StringMap = {};
-        for(const packedTroop of packedSquadSplit) {
-            const troop = this.unpackTroop(packedTroop);
-            let troopLengthAtTier = 0;
-            if(troop.tier === 1) {
-                troopLengthAtTier = tier1Troops.push(troop);
-            }
-            if(troop.tier === 2) {
-                troopLengthAtTier = tier2Troops.push(troop);
-            }
-            if(troop.tier === 3) {
-                troopLengthAtTier = tier3Troops.push(troop);
-            }
-
-            squad[`t${troop.tier}_${troopLengthAtTier}`] = troop;
-        }
-        return squad;
-    }
-
-    unpackTroop(packedTroop: BigNumber | BN): TroopExtended | Troop {
-        const _packedTroop = this._toBigNumber(packedTroop);
-        const _troopId = _packedTroop.mod(Unpacker.SHIFT).toNumber();
-        if(_troopId === 0) return {
-            id: 0,
-            type: 0,
-            tier: 0,
-            building: 0,
-            agility: 0,
-            attack: 0,
-            armor: 0,
-            vitality: 0,
-            wisdom: 0
-        };
-        if(!CombatConstants.ALL_TROOPS_IDS.includes(_troopId)) {
-            throw new Error(
-                `Unpacker::unpackTroos - Incorrect troop id unpacked, troopId must be between ${CombatConstants.ALL_TROOPS_IDS[0]} and ${CombatConstants.ALL_TROOPS_IDS[CombatConstants.ALL_TROOPS_IDS.length - 1]} (troopId: ${_troopId})`
-            );
-        }
-        const troopId = _troopId as TroopId;
-        const troopName = CombatConstants.TROOPS_IDS_TO_NAMES[troopId] as TroopName;
-
-        return {
-            id: troopId,
-            name: troopName,
-            type: CombatConstants.TROOPS_PROPS.Type[troopName],
-            tier: CombatConstants.TROOPS_PROPS.Tier[troopName],
-            building: CombatConstants.TROOPS_PROPS.Buildings[troopName],
-            agility: CombatConstants.TROOPS_PROPS.Agility[troopName],
-            attack: CombatConstants.TROOPS_PROPS.Attack[troopName],
-            armor: CombatConstants.TROOPS_PROPS.Armor[troopName],
-            vitality: CombatConstants.TROOPS_PROPS.Vitality[troopName],
-            wisdom: CombatConstants.TROOPS_PROPS.Widsom[troopName]
-        };
-    }
-
-    unpackData(data: BigNumberish, index: BigNumberish, mask_size: BigNumberish) {
+    static unpackData(data: BigNumberish, index: BigNumberish, mask_size: BigNumberish) {
 
         const power = BigNumber.from(2).pow(index);
         const mask = BigNumber.from(mask_size).mul(power);
@@ -107,15 +19,25 @@ export class Unpacker {
         return quotient;
     }
     
-    _loadResourcesIdsAndValuesFromCost(
+    static transformCostToToken(
+        costs: CostPacked[], 
+        quantityMultiplier: BigNumberish, 
+    ): Partial<ResourceIdsMap<Partial<ResourceId>, BigNumber>> {
+        const { ids, values } = this._loadResourcesIdsAndValuesFromCost([], [], costs.length, costs, 0);
+
+        return this._populateCostWithResourceIds(ids, values, quantityMultiplier);
+    }
+    
+    static _loadResourcesIdsAndValuesFromCost(
         ids : BigNumber[], 
         values : BigNumber[], 
         costsLength: number,
         costs : CostPacked[], 
         cummulativeResourceCount: number
-    ): any {
+    ): { ids: BigNumber[], values: BigNumber[], cummulativeResourceCount: number } {
 
         if(costsLength === 0) return { ids, values, cummulativeResourceCount };
+
         const currentCost = costs[costsLength -1];
         const { values: _values, ids: _ids } = this._loadSingleCostIdsAndValues(currentCost, 0, [], []);
 
@@ -128,7 +50,7 @@ export class Unpacker {
         );
     }
 
-    _loadSingleCostIdsAndValues(
+    static _loadSingleCostIdsAndValues(
         cost: CostPacked, 
         idx: number, 
         ids : BigNumber[], 
@@ -154,6 +76,75 @@ export class Unpacker {
         return this._loadSingleCostIdsAndValues(cost, idx + 1, [...ids, tokenId], [...values, value]);
     }
 
+    static unpackSquad(packedSquad: BigNumber | BN): Squad<number> | {} {
+        // parameters taken from https://github.com/BibliothecaForAdventurers/realms-contracts/blob/main/contracts/settling_game/library/library_combat.cairo
+        const packedSquadSplit = this._splitInt( 
+            this._toBigNumber(packedSquad), 
+            15, 
+            Unpacker.SHIFT.pow(2), 
+            BigNumber.from(2).pow(16), 
+            []
+        );
+        let tier1Troops = [];
+        let tier2Troops = [];
+        let tier3Troops = [];
+        let squad: Partial<Squad<number>> = {};
+        for(const packedTroop of packedSquadSplit) {
+            const troop = this.unpackTroop(packedTroop);
+            let troopLengthAtTier = 0;
+            if(troop.tier === 1) {
+                troopLengthAtTier = tier1Troops.push(troop);
+            }
+            if(troop.tier === 2) {
+                troopLengthAtTier = tier2Troops.push(troop);
+            }
+            if(troop.tier === 3) {
+                troopLengthAtTier = tier3Troops.push(troop);
+            }
+
+            if(troop.tier === 0) return {};
+
+            squad[`t${troop.tier}_${troopLengthAtTier}` as keyof(Squad<number>)] = troop;
+        }
+        return squad as Required<Squad<number>>;
+    }
+
+    static unpackTroop(packedTroop: BigNumber | BN): Troop<number> {
+        const _packedTroop = this._toBigNumber(packedTroop);
+        const _troopId = _packedTroop.mod(Unpacker.SHIFT).toNumber() as TroopId;
+        if(!_troopId) return {
+            id: 0,
+            type: 0,
+            tier: 0,
+            building: 0,
+            agility: 0,
+            attack: 0,
+            armor: 0,
+            vitality: 0,
+            wisdom: 0
+        };
+        if(!CombatConstants.ALL_TROOPS_IDS.includes(_troopId)) {
+            throw new Error(
+                `Unpacker::unpackTroos - Incorrect troop id unpacked, troopId must be between ${CombatConstants.ALL_TROOPS_IDS[0]} and ${CombatConstants.ALL_TROOPS_IDS[CombatConstants.ALL_TROOPS_IDS.length - 1]} (troopId: ${_troopId})`
+            );
+        }
+        const troopId = _troopId as TroopId;
+        const troopName = CombatConstants.TROOPS_IDS_TO_NAMES[troopId] as TroopName;
+
+        return {
+            id: troopId,
+            name: troopName,
+            type: CombatConstants.TROOPS_PROPS.Type[troopName],
+            tier: CombatConstants.TROOPS_PROPS.Tier[troopName],
+            building: CombatConstants.TROOPS_PROPS.Building[troopName],
+            agility: CombatConstants.TROOPS_PROPS.Agility[troopName],
+            attack: CombatConstants.TROOPS_PROPS.Attack[troopName],
+            armor: CombatConstants.TROOPS_PROPS.Armor[troopName],
+            vitality: CombatConstants.TROOPS_PROPS.Vitality[troopName],
+            wisdom: CombatConstants.TROOPS_PROPS.Widsom[troopName]
+        };
+    }
+
     /**
      * @notice Splits the given (unsigned) value into n "limbs", where each limb is in the range [0, bound),
      * as follow: value = x[0] + x[1] * base + x[2] * base**2 + ... + x[n - 1] * base**(n - 1)
@@ -169,7 +160,7 @@ export class Unpacker {
      * @param output - The array you want to store the output in (need to be passed to stack recursively)
      * @returns 
      */
-    _splitInt(
+    static _splitInt(
         value: BigNumber,
         n: number,
         base: BigNumber,
@@ -191,21 +182,12 @@ export class Unpacker {
         );
     }
 
-    _toBigNumber(num: BigNumber | BN) {
+    static _toBigNumber(num: BigNumber | BN) {
         return !(num instanceof BigNumber) ? BigNumber.from(num.toString()) : num;
     }
 
-    _populateCostWithResourceName(ids: BigNumber[], values: BigNumber[], quantityMultiplier: BigNumberish) {
-        let cost: { [key in ResourceName]?: BigNumber } = {};
-        for(let i = 0; i < ids.length; i++) {
-            const key = ResourcesConstants.RESOURCES_IDS_TO_NAMES[ids[i].toNumber() as ResourceId] as ResourceName;
-            cost[key] = values[i].mul(quantityMultiplier);
-        }
-        return cost;
-    }
-
-    _populateCostWithResourceIds(ids: BigNumber[], values: BigNumber[], quantityMultiplier: BigNumberish) {
-        let cost: { [key in ResourceId]?: BigNumber } = {};
+    static _populateCostWithResourceIds(ids: BigNumber[], values: BigNumber[], quantityMultiplier: BigNumberish) {
+        let cost: Partial<ResourceIdsMap<Partial<ResourceId>, BigNumber>> = {};
         for(let i = 0; i < ids.length; i++) {
             cost[ids[i].toNumber() as ResourceId] = values[i].mul(quantityMultiplier);
         }

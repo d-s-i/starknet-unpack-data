@@ -1,5 +1,3 @@
-import { BuildingsContants } from "./BuildingsConstants";
-
 export class CombatConstants {
 
     /**
@@ -19,7 +17,7 @@ export class CombatConstants {
         "Mage": 11,
         "Arcanist": 12,
         "Goblin": 13
-    };
+    } as const;
 
     static TROOPS_IDS_TO_NAMES = {
         1: "Skirmisher",
@@ -35,7 +33,7 @@ export class CombatConstants {
         11: "Mage",
         12: "Arcanist",
         13: "Goblin"
-    };
+    } as const;
 
     static ALL_TROOPS_IDS = [
         1,
@@ -51,7 +49,7 @@ export class CombatConstants {
         11,
         12,
         13
-    ];
+    ] as const;
 
     /**
      * @dev - Values coming from https://github.com/BibliothecaForAdventurers/realms-contracts/blob/main/contracts/settling_game/L06_Combat.cairo
@@ -59,35 +57,42 @@ export class CombatConstants {
     static TROOPS_SLOTS = {
         "attacking": 1,
         "defending": 2
-    };
+    } as const;
 
     static ATTACK_TYPES = {
         "COMBAT_TYPE_ATTACK_VS_DEFENSE": 1,
         "COMBAT_TYPE_WISDOM_VS_AGILITY": 2
-    };
+    } as const;
 
-    static TROOPS_TYPES = {
+    static TROOPS_TYPES_NAMES_TO_IDS = {
         "RangedNormal": 1,
         "RangedMagic": 2,
         "Melee": 3,
         "Siege": 4
-    };
+    } as const;
+
+    static TROOPS_TYPES_IDS_TO_NAMES = {
+        1: "RangedNormal",
+        2: "RangedMagic",
+        3: "Melee",
+        4: "Siege"
+    } as const;
 
     static TROOPS_PROPS = {
         Type: {
-            "Skirmisher": CombatConstants.TROOPS_TYPES.RangedNormal,
-            "Longbow": CombatConstants.TROOPS_TYPES.RangedNormal,
-            "Crossbow": CombatConstants.TROOPS_TYPES.RangedNormal,
-            "Pikeman": CombatConstants.TROOPS_TYPES.Melee,
-            "Knight": CombatConstants.TROOPS_TYPES.Melee,
-            "Paladin": CombatConstants.TROOPS_TYPES.Melee,
-            "Ballista": CombatConstants.TROOPS_TYPES.Siege,
-            "Mangonel": CombatConstants.TROOPS_TYPES.Siege,
-            "Trebuchet": CombatConstants.TROOPS_TYPES.Siege,
-            "Apprentice": CombatConstants.TROOPS_TYPES.RangedMagic,
-            "Mage": CombatConstants.TROOPS_TYPES.RangedMagic,
-            "Arcanist": CombatConstants.TROOPS_TYPES.RangedMagic,
-            "Goblin": CombatConstants.TROOPS_TYPES.Melee,
+            "Skirmisher": 1,
+            "Longbow": 1,
+            "Crossbow": 1,
+            "Pikeman": 3,
+            "Knight": 3,
+            "Paladin": 3,
+            "Ballista": 4,
+            "Mangonel": 4,
+            "Trebuchet": 4,
+            "Apprentice": 2,
+            "Mage": 2,
+            "Arcanist": 2,
+            "Goblin": 3,
         },
         Tier: {
             "Skirmisher": 1,
@@ -104,19 +109,19 @@ export class CombatConstants {
             "Arcanist": 3,
             "Goblin": 1
         },
-        Buildings: {
-            "Skirmisher": BuildingsContants.BUILDINGS_NAMES_TO_IDS.ArcherTower,
-            "Longbow": BuildingsContants.BUILDINGS_NAMES_TO_IDS.ArcherTower,
-            "Crossbow": BuildingsContants.BUILDINGS_NAMES_TO_IDS.ArcherTower,
-            "Pikeman": BuildingsContants.BUILDINGS_NAMES_TO_IDS.Barracks,
-            "Knight": BuildingsContants.BUILDINGS_NAMES_TO_IDS.Barracks,
-            "Paladin": BuildingsContants.BUILDINGS_NAMES_TO_IDS.Barracks,
-            "Ballista": BuildingsContants.BUILDINGS_NAMES_TO_IDS.Castle,
-            "Mangonel": BuildingsContants.BUILDINGS_NAMES_TO_IDS.Castle,
-            "Trebuchet": BuildingsContants.BUILDINGS_NAMES_TO_IDS.Castle,
-            "Apprentice": BuildingsContants.BUILDINGS_NAMES_TO_IDS.MageTower,
-            "Mage": BuildingsContants.BUILDINGS_NAMES_TO_IDS.MageTower,
-            "Arcanist": BuildingsContants.BUILDINGS_NAMES_TO_IDS.MageTower,
+        Building: {
+            "Skirmisher": 8,
+            "Longbow": 8,
+            "Crossbow": 8,
+            "Pikeman": 6,
+            "Knight": 6,
+            "Paladin": 6,
+            "Ballista": 9,
+            "Mangonel": 9,
+            "Trebuchet": 9,
+            "Apprentice": 7,
+            "Mage": 7,
+            "Arcanist": 7,
             "Goblin": 0
         },
         Agility: {
@@ -195,6 +200,5 @@ export class CombatConstants {
             "Goblin": 1
         }
 
-    };
-    
+    } as const;
 }

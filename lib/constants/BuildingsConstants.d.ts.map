@@ -1,1 +1,1 @@
-{"version":3,"file":"BuildingsConstants.d.ts","sourceRoot":"","sources":["../../constants/BuildingsConstants.ts"],"names":[],"mappings":"AAAA,qBAAa,iBAAiB;IAE1B,MAAM,CAAC,sBAAsB;;;;;;;;;;MAU3B;IACF,MAAM,CAAC,sBAAsB;;;;;;;;;;MAU3B;IAEF,MAAM,CAAC,aAAa,WAUlB;CAEL"}
+{"version":3,"file":"BuildingsConstants.d.ts","sourceRoot":"","sources":["../../src/constants/BuildingsConstants.ts"],"names":[],"mappings":"AAAA,qBAAa,iBAAiB;IAE1B,MAAM,CAAC,sBAAsB;;;;;;;;;;MAUlB;IAEX,MAAM,CAAC,sBAAsB;;;;;;;;;;MAUlB;IAEX,MAAM,CAAC,aAAa,0HAUT;IAEX,MAAM,CAAC,iBAAiB,uCAUb;CACd"}

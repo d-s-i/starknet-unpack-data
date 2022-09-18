@@ -10,7 +10,8 @@ export class BuildingsContants {
         "MageTower": 7,
         "ArcherTower": 8,
         "Castle": 9
-    };
+    } as const;
+
     static BUILDINGS_IDS_TO_NAMES = {
         1: "House",
         2: "StoreHouse",
@@ -21,7 +22,7 @@ export class BuildingsContants {
         7: "MageTower",
         8: "ArcherTower",
         9: "Castle"
-    };
+    } as const;
     
     static ALL_BUILDINGS = [
         "House",
@@ -33,6 +34,17 @@ export class BuildingsContants {
         "MageTower",
         "ArcherTower",
         "Castle"
-    ];
+    ] as const;
 
+    static ALL_BUILDINGS_IDS = [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+    ] as const;
 }
